@@ -1,9 +1,14 @@
 import keyboard as kb
 import time
 
+start = time.time()
 t1 = time.time()
+end = t1 + 60
 
-for i in range(0, 10):
-    event = kb.read_event(suppress=False)
-    t2 = time.time()
-    print(f'pressed {event} at {str(t2-t1)[0:5]} seconds')
+while True:
+    event = kb.read_event(False)
+    print(
+         f'{event} pressed {event.name} at {str(event.time - t1)[0:6]}')
+    start = time.time()
+    if end <= start:
+        break
