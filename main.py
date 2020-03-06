@@ -1,5 +1,5 @@
 import keyboard as kb
-import time, csv, pandas, datetime
+import time, csv, pandas
 
 start=time.time()
 t1=time.time()
