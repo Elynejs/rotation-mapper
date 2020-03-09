@@ -1,9 +1,9 @@
 import keyboard as kb
 import time, csv, pandas
-from PIL import Image
+from PIL import Image, ImageOps
 
 t1=time.time()
-dirname = time.strftime("%Y-%m-%d_%Hh%Mm%Ss")
+filename = time.strftime("%Y-%m-%d_%Hh%Mm%Ss")
 end=t1+10 #change this number to change the duration(in seconds) of the mapping
 log=[]
 keys_pressed = []
@@ -55,14 +55,12 @@ def buildHeatmap():
         heatColorInfo = heatRegion.getcolors()[0][1]
         newImg = Image.new('RGB', (1250,404), heatColorInfo)
         box = (k_loc[k][0], k_loc[k][1], k_loc[k][2], k_loc[k][3])
-        region = im.crop(box)
+        region = ImageOps.crop(im, box)
         region = Image.blend(region, newImg, .5)
         im.paste(region, box)
-    im.save(f'./log/{dirname}/heatmap.png')
+    im.save(f'./log/{filename}.png')
     im.show()
     return True
-
-
 
 while True:
     event=kb.read_event(False)
@@ -71,13 +69,13 @@ while True:
     log.append({'Key':event.name,'Time':str(event.time-t1)[:5],'Type':Type,'Scan code':event.scan_code})
     keys_pressed.append(event.scan_code)
     if end<=event.time: 
-        with open(f'./log/{dirname}/log.csv',"w") as file:
+        with open(f'./log/{filename}.csv',"w") as file:
             columns=['Key','Time','Type','Scan code']
             writer=csv.DictWriter(file,fieldnames=columns)
             writer.writeheader()
             for i in range(0,len(log)):
                 writer.writerow(log[i])
-        df = pandas.read_csv(f'./log/{dirname}/log.csv', index_col='Key')
+        df = pandas.read_csv(f'./log/{filename}.csv', index_col='Key')
         print(df)
         buildHeatmap()
         break
