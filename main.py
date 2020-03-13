@@ -1,15 +1,27 @@
 import keyboard as kb
 import time, csv, pandas
 from PIL import Image, ImageOps
+import numpy as np
+import seaborn as sb
+import matplotlib.pyplot as plt
+import matplotlib.cm
+from matplotlib.colors import LinearSegmentedColormap
+
+wd = matplotlib.cm.winter._segmentdata  # only has r,g,b
+wd['alpha'] = ((0.0, 0.0, 0.3),
+               (0.3, 0.3, 1.0),
+               (1.0, 1.0, 1.0))
+
+al_winter = LinearSegmentedColormap('AlphaWinter', wd)
 
 t1=time.time()
 filename = time.strftime("%Y-%m-%d_%Hh%Mm%Ss")
-end=t1+10 #change this number to change the duration(in seconds) of the mapping
+end=t1+5 #change this number to change the duration(in seconds) of the mapping
 log=[]
-keys_pressed = []
-k_loc = {'1':(46,9,92,56),'59':(170,7,215,52),'60':(225,6,265,51),'61':(278,5,321,53),
-        '62':(330,6,375,51),'63':(384,4,427,53),'64':(436,5,481,53),'65':(490,4,532,52),
-        '66':(540,5,586,51),'67':(596,5,640,51),'68':(650,5,693,52),'87':(702,5,750,50),
+scan_pressed = []
+k_loc = {'1':(46,5,92,50),'59':(170,5,215,50),'60':(225,5,265,50),'61':(278,5,321,50),
+        '62':(330,5,375,50),'63':(384,5,427,50),'64':(436,5,481,50),'65':(490,5,532,50),
+        '66':(540,5,586,50),'67':(596,5,640,50),'68':(650,5,693,50),'87':(702,5,750,50),
         '88':(755,5,805,50),'55':(845,5,895,50),'70':(900,5,950,50),'69':(950,5,995,50),
         '41':(15,105,65,155),'2':(65,105,115,155),'3':(115,105,165,155),'4':(175,105,225,155),
         '5':(225,105,275,155),'6':(280,105,325,155),'7':(335,105,380,155),'8':(385,105,430,155),
@@ -37,37 +49,30 @@ k_loc = {'1':(46,9,92,56),'59':(170,7,215,52),'60':(225,6,265,51),'61':(278,5,32
 
 
 def buildHeatmap():
-    global k_loc, keys_pressed
-    t = {}
-    for i in keys_pressed:
-        if i in t:
-            t[i] = t[i] + 1
-        else:
-            t[i] = 1
-    biggest = max(v for k, v in t.items())
-    heatmap = Image.open('./src/heat_gradient.png')
-    im = Image.open('./src/keyboard_image.png')
-    for (k, v) in t.items():
-        if(k not in k_loc):
+    global k_loc, scan_pressed
+    heatmap_array = np.zeros(shape=(404,1250))
+    biggest = max(scan_pressed)
+    import matplotlib.image as mpimg
+    for i in scan_pressed:
+        if i not in heatmap_array:
             continue
-        heatbox = ((int((v/biggest)*500)-1), 0, int((v/biggest)*500), 1)
-        heatRegion = heatmap.crop(heatbox)
-        heatColorInfo = heatRegion.getcolors()[0][1]
-        newImg = Image.new('RGB', (1250,404), heatColorInfo)
-        box = (k_loc[k][0], k_loc[k][1], k_loc[k][2], k_loc[k][3])
-        region = ImageOps.crop(im, box)
-        region = Image.blend(region, newImg, .5)
-        im.paste(region, box)
-    im.save(f'./log/{filename}.png')
-    im.show()
+        heatmap_array[k_loc[i][1]:k_loc[i][3],k_loc[i][0]:k_loc[i][2]] = heatmap_array[k_loc[i][1]:k_loc[i][3],k_loc[i][0]:k_loc[i][2]] + 1
+    kb_img = mpimg.imread('./src/keyboard_image.png')
+    heat_map = sb.heatmap(heatmap_array, yticklabels=False, xticklabels=False, vmin=0, vmax=biggest, cbar=False, cmap=matplotlib.cm.winter, zorder=2, alpha=.5)
+    heat_map.imshow(kb_img, aspect=heat_map.get_aspect(), extent=heat_map.get_xlim() + heat_map.get_ylim(),zorder=1)
+    plt.savefig(f'./log/{filename}.png')
+    plt.show()
     return True
 
 while True:
     event=kb.read_event(False)
-    print(f'{event} pressed {event.name} at {str(event.time - t1)[:6]} with scan code {event.scan_code}')
+    print(f'{event} pressed {event.name} at {str(event.time - t1)[:5]} with scan code {event.scan_code}')
     Type='down'if('down'in str(event))else'up'
     log.append({'Key':event.name,'Time':str(event.time-t1)[:5],'Type':Type,'Scan code':event.scan_code})
-    keys_pressed.append(event.scan_code)
+    if Type=='down':
+        scan_pressed.append(event.scan_code)
+    else:
+        continue
     if end<=event.time: 
         with open(f'./log/{filename}.csv',"w") as file:
             columns=['Key','Time','Type','Scan code']
@@ -75,7 +80,5 @@ while True:
             writer.writeheader()
             for i in range(0,len(log)):
                 writer.writerow(log[i])
-        df = pandas.read_csv(f'./log/{filename}.csv', index_col='Key')
-        print(df)
         buildHeatmap()
         break
