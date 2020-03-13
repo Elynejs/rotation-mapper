@@ -1,5 +1,5 @@
 import keyboard as kb
-import time, csv, pandas
+import time, csv
 from PIL import Image, ImageOps
 import numpy as np
 import seaborn as sb
@@ -50,16 +50,26 @@ k_loc = {'1':(46,5,92,50),'59':(170,5,215,50),'60':(225,5,265,50),'61':(278,5,32
 
 def buildHeatmap():
     global k_loc, scan_pressed
-    heatmap_array = np.zeros(shape=(404,1250))
-    biggest = max(scan_pressed)
-    import matplotlib.image as mpimg
+    t = {}
     for i in scan_pressed:
-        if i not in heatmap_array:
+        if i in t:
+            t[i] = t[i] + 1
+        else:
+            t[i] = 1
+    heatmap_array = np.zeros(shape=(404,1250), dtype=int)
+    biggest = max(v for k, v in t.items())
+    import matplotlib.image as mpimg
+    for (k, v) in t.items():
+        if(k not in k_loc):
             continue
-        heatmap_array[k_loc[i][1]:k_loc[i][3],k_loc[i][0]:k_loc[i][2]] = heatmap_array[k_loc[i][1]:k_loc[i][3],k_loc[i][0]:k_loc[i][2]] + 1
+        A = k_loc[k][0]
+        B = k_loc[k][1]
+        C = k_loc[k][2]
+        D = k_loc[k][3]
+        heatmap_array[B:D, A:C] = v
     kb_img = mpimg.imread('./src/keyboard_image.png')
-    heat_map = sb.heatmap(heatmap_array, yticklabels=False, xticklabels=False, vmin=0, vmax=biggest, cbar=False, cmap=matplotlib.cm.winter, zorder=2, alpha=.5)
-    heat_map.imshow(kb_img, aspect=heat_map.get_aspect(), extent=heat_map.get_xlim() + heat_map.get_ylim(),zorder=1)
+    heat_map = sb.heatmap(heatmap_array, yticklabels=False, xticklabels=False, vmin=1, vmax=int(biggest), cbar=False, cmap=matplotlib.cm.winter, zorder=1, alpha=.3)
+    heat_map.imshow(kb_img, aspect=heat_map.get_aspect(), extent=heat_map.get_xlim() + heat_map.get_ylim(),zorder=2)
     plt.savefig(f'./log/{filename}.png')
     plt.show()
     return True
