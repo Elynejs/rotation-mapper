@@ -1,9 +1,9 @@
 import keyboard as kb
-import time, csv
+import time, csv, os
 
 t1=time.time()
 filename = time.strftime("%Y-%m-%d_%Hh%Mm%Ss")
-end=t1+5 #change this number to change the duration(in seconds) of the mapping
+end=t1+10 #change this number to change the duration(in seconds) of the mapping
 log=[]
 scan_pressed = []
 k_loc = {'1':(46,5,92,50),'59':(170,5,215,50),'60':(225,5,265,50),'61':(278,5,321,50),
