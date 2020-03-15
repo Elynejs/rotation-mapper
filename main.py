@@ -1,18 +1,5 @@
 import keyboard as kb
 import time, csv
-from PIL import Image, ImageOps
-import numpy as np
-import seaborn as sb
-import matplotlib.pyplot as plt
-import matplotlib.cm
-from matplotlib.colors import LinearSegmentedColormap
-
-wd = matplotlib.cm.winter._segmentdata  # only has r,g,b
-wd['alpha'] = ((0.0, 0.0, 0.3),
-               (0.3, 0.3, 1.0),
-               (1.0, 1.0, 1.0))
-
-al_winter = LinearSegmentedColormap('AlphaWinter', wd)
 
 t1=time.time()
 filename = time.strftime("%Y-%m-%d_%Hh%Mm%Ss")
@@ -49,44 +36,43 @@ k_loc = {'1':(46,5,92,50),'59':(170,5,215,50),'60':(225,5,265,50),'61':(278,5,32
 
 
 def buildHeatmap():
+    import numpy as np
+    import seaborn as sb
+    import matplotlib.pyplot as plt
     global k_loc, scan_pressed
     t = {}
     for i in scan_pressed:
         if i in t:
-            t[i] = t[i] + 1
+            t[i] = t[i] + 1.0
         else:
-            t[i] = 1
-    heatmap_array = np.zeros(shape=(404,1250), dtype=int)
+            t[i] = 1.0
+    heatmap_array = np.zeros(shape=(404,1250))
     biggest = max(v for k, v in t.items())
     import matplotlib.image as mpimg
     for (k, v) in t.items():
-        if(k not in k_loc):
-            continue
-        A = k_loc[k][0]
-        B = k_loc[k][1]
-        C = k_loc[k][2]
-        D = k_loc[k][3]
-        heatmap_array[B:D, A:C] = v
+        #new_value = np.full(shape=(k_loc[str(k)][0]-k_loc[str(k)][2], k_loc[str(k)][1]-k_loc[str(k)][3]), fill_value=v)
+        heatmap_array[k_loc[str(k)][1]:k_loc[str(k)][3],
+                      k_loc[str(k)][0]:k_loc[str(k)][2]] = v #new_value[:, :]
     kb_img = mpimg.imread('./src/keyboard_image.png')
-    heat_map = sb.heatmap(heatmap_array, yticklabels=False, xticklabels=False, vmin=1, vmax=int(biggest), cbar=False, cmap=matplotlib.cm.winter, zorder=1, alpha=.3)
-    heat_map.imshow(kb_img, aspect=heat_map.get_aspect(), extent=heat_map.get_xlim() + heat_map.get_ylim(),zorder=2)
+    heat_map = sb.heatmap(heatmap_array, yticklabels=False, xticklabels=False, vmin=0, vmax=int(biggest), cbar=False, zorder=2,cmap='coolwarm', alpha=.3)
+    heat_map.imshow(kb_img, aspect=heat_map.get_aspect(), extent=heat_map.get_xlim() + heat_map.get_ylim(),zorder=1)
     plt.savefig(f'./log/{filename}.png')
     plt.show()
     return True
 
 while True:
-    event=kb.read_event(False)
+    event = kb.read_event(False)
     print(f'{event} pressed {event.name} at {str(event.time - t1)[:5]} with scan code {event.scan_code}')
-    Type='down'if('down'in str(event))else'up'
+    Type= 'down' if 'down' in str(event) else 'up'
     log.append({'Key':event.name,'Time':str(event.time-t1)[:5],'Type':Type,'Scan code':event.scan_code})
-    if Type=='down':
+    if Type == 'down':
         scan_pressed.append(event.scan_code)
     else:
         continue
-    if end<=event.time: 
+    if end <= event.time: 
         with open(f'./log/{filename}.csv',"w") as file:
-            columns=['Key','Time','Type','Scan code']
-            writer=csv.DictWriter(file,fieldnames=columns)
+            columns = ['Key','Time','Type','Scan code']
+            writer = csv.DictWriter(file,fieldnames=columns)
             writer.writeheader()
             for i in range(0,len(log)):
                 writer.writerow(log[i])
