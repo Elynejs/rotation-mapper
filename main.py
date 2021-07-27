@@ -1,9 +1,11 @@
 import keyboard as kb
-import time, csv, os
+import time, csv
+
+user_input = input("Input the time in seconds of the mapping : ")
 
 t1=time.time()
 filename = time.strftime("%Y-%m-%d_%Hh%Mm%Ss")
-end=t1+10 #change this number to change the duration(in seconds) of the mapping
+end=t1+int(user_input) #change this number to change the duration(in seconds) of the mapping
 log=[]
 scan_pressed = []
 k_loc = {'1':(46,5,92,50),'59':(170,5,215,50),'60':(225,5,265,50),'61':(278,5,321,50),
@@ -49,10 +51,10 @@ def buildHeatmap():
     heatmap_array = np.zeros(shape=(404,1250))
     biggest = max(v for k, v in t.items())
     import matplotlib.image as mpimg
+
     for (k, v) in t.items():
         #new_value = np.full(shape=(k_loc[str(k)][0]-k_loc[str(k)][2], k_loc[str(k)][1]-k_loc[str(k)][3]), fill_value=v)
-        heatmap_array[k_loc[str(k)][1]:k_loc[str(k)][3],
-                      k_loc[str(k)][0]:k_loc[str(k)][2]] = v #new_value[:, :]
+        heatmap_array[k_loc[str(k)][1]:k_loc[str(k)][3],k_loc[str(k)][0]:k_loc[str(k)][2]] = v #new_value[:, :]
     kb_img = mpimg.imread('./src/keyboard_image.png')
     heat_map = sb.heatmap(heatmap_array, yticklabels=False, xticklabels=False, vmin=0, vmax=int(biggest), cbar=False, zorder=2,cmap='coolwarm', alpha=.3)
     heat_map.imshow(kb_img, aspect=heat_map.get_aspect(), extent=heat_map.get_xlim() + heat_map.get_ylim(),zorder=1)
